@@ -1,0 +1,248 @@
+#!/usr/local/bin/perl -w
+#
+# KLASSE:	Struct_File
+#
+# Basisklasse:  LkTyH
+#
+# METHODEN:
+#	$Struct_File = new Struct_File ( $filename);
+#		Konstruktor.
+#		Erzeugt Struct_File-Object, welches auf das angegebene Struct_File
+#		zugreift
+#
+#       \$field_hash = $Struct_File->Get_List( $key)
+#       	Gibt eine Hashreferenz auf ein Hash zurueck, das von allen Oberbegriffen 
+#               den gewaehlten Eintrag und dessen Inhalt enthaelt.
+#
+#       \$item_hash = $Struct_File->Get_Items( $field)
+#               Gibt die Hashreferenz auf ein Hash zurueck, das alle Eintraege des 
+#               angegebenen Oberbegriffes enthaelt.
+#
+#       $content = $Struct_File->Read( $item, $key)
+#               Liefert den Inhalt des uebergebenen Eintrages von dem gewaehlten 
+#               Oberbegriff zurueck.
+#
+#       $status = $Struct_File->Write( $item, $key, $content)
+#               Traegt den Inhalt des Eintrages von dem Oberbegriff in den Struct_File
+#               ein.
+#
+#	$status = $Struct_File->Delete( $item);
+#		Loescht alle Eintraege eines bestimmten Oberbegriffs aus dem 
+#		Struct_File.
+#
+#
+# COPYRIGHT
+#	(c) 1997 dimedis GmbH, All Rights Reserved
+#
+# MODIFICATION HISTORY
+#	16.10.1997 0.1.0 stefan
+#		Erste Version mit folgenden Methoden
+#		- Konstruktor
+#		- Read
+#		- Write
+#		- Delete
+#	20.10.1997 0.2.0 joern
+#		- Umbenannt von Driver nach Struct_File, da hier nichts
+#		  driverspezifisches mehr getan wird. Struct_File wird z.B.
+#		  auch fuer die Verwaltung des Projectfiles benutzt.
+#		  
+
+package Struct_File;
+
+use LkTyH;
+
+@ISA = qw( LkTyH);           # Klasse LkTyH erben
+
+# Error- and Statuscodes 
+#
+$NOT_INITIALIZED = -3;       # Instanz konnte nicht erzeugt werden
+
+$TRUE = 1;
+$FALSE = 0;
+
+# Klassenvariablen
+#
+$version = "0.2.0";          # derzeitige Version der Klasse
+$init_status = $TRUE;        # Status, ob eine Instanz erzeugt werden konnte
+
+sub new {
+#
+# PARAMETER:    1. Dateiname
+#
+# RETURN:	1. Objektreferenz
+#		2. Objekttyp
+#
+# DESCRIPTION:
+#	Konstruktor der Klasse. Bindet die Datei an einen internen Hash.
+#
+    my $type = shift;        # Objekttyp
+    my $filename = shift;    # Dateiname der Password-Datei
+
+    return undef if $init_status == $FALSE;
+
+    my $self = $type->SUPER::new( $filename);
+                             # Instanz-Hash fuer Instanzvariablen
+
+    $self->{struct_file_hash} = \%{$self->{LkTyH_hash}};
+
+    if ($LkTyH::init_status == $FALSE) {
+	$init_status = $FALSE;
+	return undef;
+    } 
+
+    return bless $self, $type;
+} 
+
+
+sub Get_List {
+#
+# PARAMETER:	1. Eintrag
+#
+# RETURN:	1. Referenz auf Hash mit den gewuenschten Feldern als Inhalt
+#		Fehlercodes
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Gibt eine Hashreferenz zurueck. Die Inhalte aller Oberbegriffe zu einem
+#	angegebenen Eintrag werden in diesem Hash gesammelt
+#       
+    my $self = shift;        # Objekttyp
+    my $field = shift;       # Eintrag
+    
+    my ($string, $drv); 
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;    
+
+    # erzeuge einer Liste aller gespeicherten Eintraege zu diesem Schluessel
+
+    my ($key, $item, $struct_file, $collected, @struct_file_list);
+    $collected = '';
+
+    foreach $key ( keys %{$self->{struct_file_hash}} ) {
+	($struct_file = $key) =~ s/_[^_]+$//;
+	print STDERR "struct_file=$struct_file\n";
+	
+	if ( $collected !~ m/\t$struct_file\t/ ) {
+	    push @struct_file_list, $struct_file ;
+	    $collected .= "\t$struct_file\t";
+	}
+    }
+
+    my %field_hash;
+
+    foreach $item ( @struct_file_list ) {
+	$field_hash{$item} = $self->{struct_file_hash}{"${item}_$field"};
+    } 
+
+    return \%field_hash;
+}
+
+sub Get_Items {
+#
+# PARAMETER:	1. Oberbegriff
+#
+# RETURN:	1. Referenz auf Hash mit den gewuenschten Feldern als Inhalt
+#		Fehlercodes
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Gibt eine Hashreferenz zurueck. Der Oberbegriff bezeichnet den Indexbegriff.
+#	Im Hash werden alle Eintraege zu einem Punkt gespeichert.
+#       
+    my $self = shift;        # Objekttyp
+    my $item = shift;        # Oberbegriff
+    
+    return $NOT_INITIALIZED if $init_status == $FALSE;    
+
+    # erzeuge einer Liste aller gespeicherten Eintrage
+
+    my %item_hash;
+
+    my $key;
+    foreach $key ( keys %{$self->{struct_file_hash}} ) {
+	if ( $key =~ m/^($item)_(.*)/) {
+	    my $new_key = $2;
+	    $item_hash{$new_key} = $self->{struct_file_hash}{$key}
+	}
+    }
+    return \%item_hash;
+}
+
+
+
+sub Read {
+#
+# PARAMETER:	1. Oberbegriff
+#		2. Eintrag
+#
+# RETURN:	Fehlercodes
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Rueckgabe des Inhalt eines Eintrags unter einem Oberbegriff
+#
+    
+    my $self = shift;            # Objekttyp
+    my ($item,    
+	$field ) = @_;             # Uebergabeparameter	
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;    
+    
+    return $self->{struct_file_hash}{"${item}_$field"};
+
+    1;
+}
+
+
+sub Write {
+#
+# PARAMETER:	1. Oberbegriff
+#		2. Eintrag
+#               3. Inhalt
+#
+# RETURN:	Fehlercodes
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Schreibt den Inhalt eines Eintrags unter den vorgegebenen Oberbegriff
+#
+    
+    my $self = shift;            # Objekttyp
+    my ($item,    
+	$field,
+	$content ) = @_;         # Uebergabeparameter	
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;    
+    
+    $self->{struct_file_hash}{"${item}_$field"} = $content;
+
+    1;
+}
+
+
+sub Delete {
+#
+# PARAMETER:	1. Oberbegriff
+#
+# RETURN:	Fehlercodes
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Loescht einen bestehenden Oberbegriff mit allen seinen Eintraegen
+#
+    my $self = shift;           # Objekttyp
+    my $item = shift;         # Uebergabeparameter
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;
+
+    my ($key, $val);
+    foreach $key ( keys %{$self->{struct_file_hash}} ) {
+	if ( $key =~ /^$item/ ) {
+            delete $self->{struct_file_hash}{$key};
+        }
+    }
+
+    1;
+}
+
+1;

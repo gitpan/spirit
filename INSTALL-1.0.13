@@ -1,0 +1,168 @@
+spirit - Erfolg ist programmierbar                   (c) 1997-2000 dimedis GmbH
+-------------------------------------------------------------------------------
+
+Inhaltsverzeichnis
+==================
+
++ Systemvoraussetzungen fuer die Unix-Version
++ Installationshinweise fuer die Unix-Version
++ Installieren von spirit Updates
+
+
+
+Systemvoraussetzungen fuer die Unix-Version:
+============================================
+
+1. zwingend erforderlich:
+-------------------------
++ Perl Version 5.004_01 oder hoeher
++ Perl CGI-Modul Version 2.36 oder hoeher
++ Perl DB_File Modul
++ Netscape Browser (ab Version 3) oder Internet Explorer (ab Version 4)
+  auf Client-Seite
++ eine eigene Webserver-Instanz auf dem Server (muss CGI faehig sein),
+  die als Unix-Benutzer 'spirit' laeuft
+
+2. optional, fuer den Datenbanksupport:
+---------------------------------------
++ Perl DBI-Modul Version 0.73 oder 0.89 oder hoeher
++ Perl DBD::Informix Modul Version 0.56 oder hoeher
++ Perl DBD::Oracle Modul Version 0.43 oder 0.50 oder hoeher
+
+
+
+Installationshinweise fuer die Unix-Version:
+============================================
+
+1. Unix Benutzer und -Gruppe anlegen
+------------------------------------
+spirit benoetigt einen eigenen Benutzer samt entsprechender Gruppe.
+Alle spirit - Dateien gehoeren diesem Benutzer und der Webserver, ueber
+den spirit laeuft, muss auch als dieser Benutzer laufen, damit auf alle
+Dateien ueber den Webserver zugegriffen werden kann.
+
+Dazu legen Sie bitten den Benutzer 'spirit' und die Gruppe 'spirit' in Ihrem
+System an. Dem Benutzer 'spirit' muss als Primaer-Gruppe 'spirit' zugewiesen
+werden.
+
+Zur Installationszeit muss sich dieser Benutzer am System anmelden koennen,
+ist die Installation abgeschlossen, koennen Password und Shell fuer diesen
+User einfach gesperrt werden. Die komplette Administration erfolgt dann
+uber die WWW Schnittstelle.
+
+
+2. spirit Verzeichnis anlegen
+-----------------------------
+Legen Sie in einem Verzeichnis Ihrer Wahl ein Unterverzeichnis 'spirit' an.
+Dieses Verzeichnis muss dem spirit-User und -Gruppe gehoeren.
+
+Beispiel: (als Benutzer 'root')
+
+	root@host> cd /usr/local
+	root@host> mkdir spirit
+	root@host> chown spirit spirit
+	root@host> chgrp spirit spirit
+
+
+3. Archiv entpacken
+-------------------
+Nun entpacken Sie bitte als Benutzer 'spirit' das tar.gz Archiv, im Verzeichnis
+oberhalb des gerade angelegten 'spirit' Unterverzeichnisses.
+
+Beispiel: (als Benutzer 'spirit')
+
+	spirit@host> cd /usr/local
+	spirit@host> gunzip -c /wo/auch/immer/spirit-x.xx.tar.gz | tar xf -
+
+
+4. Informationen, die waehrend der Installation abgefragt werden
+----------------------------------------------------------------
+Wie schon erwaehnt, benoetigt spirit einen Webserver, der als Benutzer
+'spirit' mit der Gruppe 'spirit' laueft.
+
+Der Webserver muss zwei Mappings auf spirit Verzeichnisse eingestellt haben,
+damit ueber den Webserver auf spirit zugegriffen werden kann. Das sind,
+wie allgemein ueblich, ein Mapping fuer Dokumente und eines fuer CGI-Programme.
+In unserem Beispiel koennen diese so aussehen:
+
+			Verzeichnis			URL
+
+    Dokument-Mapping: 	/usr/local/spirit/htdocs/	/
+    CGI-Mapping:      	/usr/local/spirit/cgi-bin/	/cgi-bin
+
+Wie die URL's lauten, die auf diese Verzeichnisse verweisen, koennen Sie
+frei entscheiden, wir empfehlen die Default-Werte zu uebernehmen.
+Der Webserver muss zum Zeitpunkt der Installation noch nicht mit diesen
+Einstellungen laufen. Halten Sie jedoch diese Informationen fuer die
+Installation bereit.
+
+
+5. Installationsprogramm aufrufen
+---------------------------------
+Nun rufen Sie als Benutzer spirit wie folgt das Installationsprogramm auf:
+
+Beispiel: (als Benutzer 'spirit')
+
+	spirit@host> cd /usr/local/spirit
+	spirit@host> perl spirit-install.pl
+
+Nun folgt eine interaktiv gesteuerte Installation, die nur wenige Sekunden
+in Anspruch nehmen wird. Dabei wird Ihr System auf die Vorausetzungen fuer
+spirit untersucht, bei entsprechenden Maengeln wird die Installation sofort
+konsistent abgebrochen.
+
+Sie werden nach den Mappings fuer den Webserver gefragt, wie im vorigen
+Absatz beschrieben.
+
+Das Installationsprogramm veraendert nur Dateien im spirit Verzeichnis und
+nimmt sonst keine Modifikationen an Ihrem System vor.
+
+
+6. Der erste Schritt
+--------------------
+Wenn das Installationsprogramm erfolgreich beendet wurde, wird die URL
+ausgegeben, unter der sich sich mit Ihrem Browser erstmals bei spirit
+anmelden koennen, in unserem Beispiel waere das:
+
+	http://host/
+
+Es erscheint die spirit Anmeldeaufforderung. Dort melden Sie sich mit
+dem Namen 'spirit' und dem Passwort 'spirit' an.
+
+Der 'spirit' Benutzer ist der Administrator des Systems und hat alle Rechte.
+Sie sollten Ihm zunaechst ein neues Passwort vergeben.
+
+Alles weitere entnehmen Sie bitte der Online Dokumentation, die Sie mit
+Ihrem Webbrowser in unserem Bespiel unter der URL
+
+	http://host/doc/
+
+finden. Einen guten Einstieg bietet das Kapitel 'Erste Schritte', dort
+wird ein kompletter Ablauf vom Anlegen des ersten Projektes bis zur ersten
+dynamischen HTML Seite beschrieben.
+
+
+
+Installieren von spirit Updates
+===============================
+
+Um ein spirit Update zu installieren, gehen Sie genauso wie bei einer
+Erstinstallation vor. Sie entpacken das tar Archiv wie oben beschrieben
+und fuehren spirit-install.pl aus.
+
+Es werden keine benutzererstellten Daten bei der Installation ueberschrieben
+oder geloescht. Bibliotheksdateien in exisiterenden Projekten werden von
+spirit-install.pl automatisch upgedatet.
+
+Bei der Ausfuehrung von spirit-install.pl werden bei der Erstinstallation
+die Benutzer- und Projektdatenbank initialisiert. Bei einem Update wird
+automatisch erkannt, dass diese Daten bereits exisitieren. Es erscheint
+ein entsprechender Warnhinweis, mit der Frage, ob die Daten neu initialisiert
+werden sollen. Erst wenn diese Frage explizit mit Ja beantwortet wird,
+werden die Daten neu generiert. Bei Verneinung der Frage, werden die
+bestehenden Daten automatisch uebernommen.
+
+Alle Einstellungen, die Sie bei der Installation vorgenommen haben, werden
+erneut abgefragt. Als Defaultwerte werden die aktuellen Parameter uebernommen,
+sie muessen nur mit ENTER bestaetigt werden.
+

@@ -1,0 +1,20 @@
+package USER;
+
+$Menue_BG_Color = "#ddddff";
+$Text_Color = "#000000";
+$Table_Color = "#dddddd";
+$BG_Color = "#ffffff";
+$Error_Color = "red";
+$Textarea_Rows = "30";
+$Link_Color = "#0000ff";
+$Textarea_Cols = "100";
+$Description_Cut = "50";
+$Font_Size = "2";
+$Inactive_Color = "#666666";
+$PB_Text_Color = "#000000";
+$Font = "Helvetica,Geneva,Arial";
+$Textarea_Wrap = "";
+$Header_Buttons = "1";
+$PB_BG_Color = "#cccccc";
+$Mod_Size = "";
+$PB_Link_Color = "#0000ff";

@@ -1,0 +1,159 @@
+package Lock;
+
+use LKDB;
+use IDE_Utils;
+use strict;
+
+sub new {
+	my $type = shift;
+	
+	my ($project, $project_dir, $lock_dir) = @_;
+	
+	my $lock_session_file = "$lock_dir"."lock_session";
+
+	my $db_session = new LKDB ($lock_session_file);
+
+	my $self = {
+		project => $project,
+		project_dir => $project_dir,
+		db_session => $db_session,
+		session => $db_session->{hash}
+	};
+	
+	return bless $self, $type;
+}
+
+sub object_lock_file {
+	my $self = shift;
+	
+	my ($object) = @_;
+	
+	$object =~ s/^[^\.]+//;	# Projektanteil rausschneiden
+	$object =~ s!\.!/!g;	# alle . zu / machen
+
+	my $object_path = $self->{project_dir}.$object;
+
+	# der grep ist bei Windows NT nötigt, weil der File globber
+	# wg. der scheiß caseinsensitivität der Windows Dateinamen
+	# zuviel liefern kann...
+
+	my @files = grep /^$object_path\./, <$object_path.*>;
+
+	return if scalar @files != 1;
+	
+	$object_path = $files[0];
+	$object_path =~ s!([^/]+)$!\.$1!;	# . vor Objektnamen setzen
+	
+	mkdir $object_path, 0755 if not -d $object_path;
+
+	return "$object_path/.locked_by";
+}
+
+sub project_object {
+	my $self = shift;
+	
+	my ($object) = @_;
+	
+	$object =~ s/^[^\.]+/$self->{project}/;
+	
+	return $object;
+}
+
+sub Set {
+	my $self = shift;
+	
+	my ($ticket, $username, $object, $force) = @_;
+	
+	$object = $self->project_object ($object);
+	
+	$force ||= 0;
+	
+	# Zunächst die alte Sperre dieser Session löschen
+	
+	$self->Delete ($ticket);
+	
+	# Checken, ob das Objekt von jemand anderem gesperrt ist
+	
+	my ($lock_ticket, $lock_user, $lock_time) =
+		$self->Get_Object_Info ($object);
+
+	# Wenn das Lock nicht erzwungen werden soll, wird zurückgemeldet,
+	# daß das Lock nicht gesetzt werden konnte. Andernfalls wird das
+	# existierende Lock gelöscht.
+
+	if ( defined $lock_ticket and $lock_ticket ne $ticket ) {
+		return undef if not $force;
+		
+		# aha, wir forcen das Lock, also Lock der Session
+		# vorher löschen
+		
+		$self->Delete ($lock_ticket);
+	}
+		
+	# neue Sperre setzen
+
+	my $time = IDE_Utils::Get_Timestamp();
+
+	$self->{session}->{$ticket} = "$object\t$username\t$time";
+
+	my $lock_file = $self->object_lock_file ($object);
+	open (LOCKFILE, "> $lock_file") or die "can't write $lock_file";
+	flock LOCKFILE, 2 or die "can't flock $lock_file";
+	print LOCKFILE "$ticket\t$username\t$time";
+	close LOCKFILE;
+	
+	return 1;
+}
+
+
+sub Delete {
+	my $self = shift;
+	
+	my ($ticket) = @_;
+	
+	my ($lock_object, $lock_username, $lock_time) =
+		$self->Get_Session_Info ($ticket);
+
+	return undef if ! defined $lock_object;
+
+	delete $self->{session}->{$ticket};
+
+	my $lock_file = $self->object_lock_file ($lock_object);
+	unlink $lock_file if $lock_file;
+	
+	return 1;
+}
+
+
+sub Get_Object_Info {
+	my $self = shift;
+	
+	my ($object) = @_;
+	$object = $self->project_object ($object);
+
+	my $lock_file = $self->object_lock_file ($object);
+	return (undef, undef, undef) if ! -f $lock_file;
+
+	open (LOCKFILE, $lock_file) or die "can't read $lock_file";
+	flock LOCKFILE, 1 or die "can't flock $lock_file";
+	my $row = <LOCKFILE>;
+	close LOCKFILE;
+	
+	return split ("\t", $row, 3);
+}
+
+
+sub Get_Session_Info {
+	my $self = shift;
+	
+	my ($ticket) = @_;
+	
+	my $row = $self->{session}->{$ticket};
+	return (undef, undef, undef) if ! defined $row;
+	return split ("\t", $row, 3);
+}
+
+
+
+1;
+		

@@ -1,0 +1,327 @@
+#!/usr/local/bin/perl -w
+#
+# KLASSE:	Ticket
+#
+# METHODEN:
+#	$Ticket = new Ticket ($ticket_file);
+#		Konstruktor.
+#		Erzeugt Ticket-Object, welches auf die Datei $ticket_file
+#		zugreift
+#
+#	$Ticket->Create ($ip_adress, $username);
+#		Erzeugt neues Ticket und speichert dieses zusammen mit
+#		der IP-Adresse und dem Usernamen
+#		
+#	$username = $Ticket->Check($ticket, $ip_adress);
+#		Prueft, ob $ticket existiert und zu $ip_adress gehoert
+#
+#       $Ticket->Delete($ticket);
+#               Loescht das angegebene Ticket
+#
+#	$Ticket->Dump_All();
+#		Gibt die komplette Ticket-Datei auf STDOUT aus
+#
+# COPYRIGHT
+#	(c) 1997 dimedis GmbH, All Rights Reserved
+#
+# MODIFICATION HISTORY
+#	25.09.97 0.1.0	joern
+#		Erste Version mit folgenden Methoden
+#		- Konstruktor
+#		- Destruktor
+#		- Create
+#		- Check
+#		- Dump_All
+#
+#       20.10.1997 0.2.0 stefan
+#               - Vererbung der Klasse LkTyH
+#               - Ergaenzung um die Funktion Delete und Entfernung des 
+#                 Destruktors
+#
+#	21.01.1999 0.3.0 joern
+#		- Lizenzcode entfernt
+
+package Ticket;
+
+use strict;
+use vars qw ( $TICKET_UNKNOWN $WRONG_IP $version @ISA );
+$TICKET_UNKNOWN = "-1";
+$WRONG_IP = "-2";
+
+use LkTyH;
+
+@ISA = qw( LkTyH);           # Klasse LkTyH erben
+
+$version = "0.2.0";
+
+
+sub new {
+#
+# PARAMETER:	1. Pfad der Ticketdatei
+#
+# RETURN:	1. Objektreferenz
+#		2. Objekttyp
+#
+# DESCRIPTION:
+#	Konstruktor der Ticket-Klasse. Oeffnet die Ticketdatei, verbunden
+#	mit einem internen Hash.
+#
+	my $type = shift;	# hole Objekttyp
+	my ($filename) = @_;	# hole Parameter
+
+	# binde das Hash an das DB_File mit dem uebergebenen Dateinamen
+
+	my $self = $type->SUPER::new( $filename);	
+	
+	# setze Instanzvariablen
+
+	$self->{filename}    = $filename;
+	$self->{ticket_hash} = $self->{LkTyH_hash};
+
+	# Gib Objektreferenz und -typ zurueck
+
+	return bless $self, $type;
+}
+
+
+sub Create {
+#
+# PARAMETER:	1. IP-Adresse
+#		2. Username
+#
+# RETURN:	1. Ticket
+#
+# DESCRIPTION:
+#	Erzeugt ein neues Ticket und speichert es zusammen mit IP-Adresse,
+#	Usernamen und Timestamp in die Ticketdatei
+#
+ 
+	my $self = shift;			# hole Objektreferenz
+	my ($ip_adress, $username) = @_;	# hole Parameter
+
+	# Schleife ueber Ticketgenerierung. Der Vorgang wird wiederholt
+	# falls das gerade generierte Ticket schon in der Ticketdatei
+	# vorhanden ist
+
+	my $ticket = 0;
+	do {
+		$ticket = time();
+		srand ($ticket ^ ($$+($$<<15)));
+		$ticket .= int (rand (999999));
+		($ticket) = $ticket =~ /(..............)$/;
+		$ticket =~ s/(..)(..)(..)(..)(..)(..)(..)/$7$6$5$4$1$3$2/;
+	} while defined $self->{ticket_hash}{$ticket};
+
+
+	# Datensatz generieren und in die Ticketdatei schreiben
+
+	my ($timestamp) = Timestamp();
+	$self->{ticket_hash}->{$ticket} =
+		"$ip_adress\t$username\t$timestamp\t$timestamp";
+
+	# Ticket zur weiteren Verarbeitung zurueckgeben
+
+	return $ticket;
+}
+
+# lizenz
+#{
+#	# Lizenz einlesen
+#
+#	my $c = '$xx'.'xx:'.':f="${ID'.'E::Ma'.'in_'.'Dir'.'ecto'.'ry';
+#	$c .=   '}e'.'t'.'c'.'/'.'l'.'i'.'c'.'e'.'n'.'s'.'e";';
+#	eval $c;
+#
+#	open (L, $xxxx::f);
+#	$main::_l = <L>;
+#	close L;
+#	chop $main::_l;
+#
+#	# Lizenz CRC checken
+#
+#	my $l = $main::_l;
+#
+#	$l =~ s/ (....)$//;
+#	my ($gc) = $1;
+#
+#	goto YX if $gc eq '';
+#
+#	my @e = split (" ", $l);
+#	my (@c, $e);
+#	@c = (0,0,0,0);
+#
+#	foreach $e (@e) {
+#		my $x;
+#		my $i = 0;
+#		foreach $x (split("",$e)) {
+#			my $b=$x;
+#			$b = '1' if $b eq '0';
+#			my $q = (ord($b)>64) ? ord($b)-56 : ord($b)-49;
+#			$c[$i++] ^= $q;
+#		}
+#	}
+#
+#	$c = '';
+#	foreach $e (@c) {
+#		$c .= $e<9 ? chr($e+49) : chr($e+56);
+#	}
+#
+#	$main::_l = $l if $c eq $gc;
+#	$main::_l = "x" if $c ne $gc;
+#}
+#
+#YX:;
+
+sub Check {
+#
+# PARAMETER:	1. Ticket
+#		2. IP-Adresse
+#
+# RETURN:	1. Zum Ticket gehoeriger Username = Ticket ist OK
+#		   $TICKET_UNKNOWN  = Ticket ist unbekannt
+#		   $WRONG_IP = IP-Adresse ist falsch
+#
+# DESCRIPTION:
+#	Prueft, ob das Ticket mit der uebergebenen IP-Adresse in der
+#	Ticketdatei steht. Gleichzeitig wird der Zugriffs-Timestamp
+#	aktualisiert
+#
+	my $self = shift @_;
+	my ($ticket, $ip_adress) = @_;
+
+	my $value = $self->{ticket_hash}->{$ticket};
+	return $TICKET_UNKNOWN if ! defined $value;
+
+	my @field = split ("\t", $value);
+	return $WRONG_IP if $ip_adress ne $field[0];
+
+# lizenz
+#	exit if $main::_d1 >= $main::_d2;
+
+	$field[3] = Timestamp();
+	$self->{ticket_hash}->{$ticket} = join ("\t", @field);
+
+	return $field[1];
+}
+
+sub Get_Ticket_Timestamp {
+#
+# PARAMETER:	1. Ticket
+#
+# RETURN:	1. Referenz auf die Liste aller Tickets
+#
+# DESCRIPTION:
+#	Prueft, ob das Ticket mit der uebergebenen IP-Adresse in der
+#	Ticketdatei steht und liefert den Zugriffstimestamp zurueck
+#
+	my $self = shift @_;
+	my ($ticket) = @_;
+
+	my $value = $self->{ticket_hash}->{$ticket};
+	return $TICKET_UNKNOWN if ! defined $value;
+
+	my @field = split ("\t", $value);
+
+	return $field[3];
+}
+
+sub Get_All_Tickets {
+#
+# PARAMETER:	-
+#
+# RETURN:	1.
+#		   $TICKET_UNKNOWN  = Ticket ist unbekannt
+#
+# DESCRIPTION:
+#	Prueft, ob das Ticket mit der uebergebenen IP-Adresse in der
+#	Ticketdatei steht und liefert den Zugriffstimestamp zurueck
+#
+	my $self = shift @_;
+
+	my @key_list = keys ( %{$self->{ticket_hash}} );
+	return \@key_list;
+
+}
+
+sub Timestamp {
+#
+# PARAMETER:	-
+#
+# RETURN:	1. Zeitstempel
+#
+# DESCRIPTION:
+#	Ermittelt die aktuelle Systemzeit und gibt sie als Zeitstempel
+#	in folgendem Format zurueck:
+#
+#		YYMMDD-HHMMSS
+#
+
+	return time;
+}
+
+# lizenz
+# $main::_y = "jQo%?l0(!x§#2Dp´^wµYfA3\@KaJe2";
+
+sub Dump_All {
+#
+# PARAMETER:	-
+#
+# RETURN:	-
+#
+# DESCRIPTION:
+#	Gibt die komplette Ticketdatei auf STDOUT aus
+#
+	my $self = shift;		# hole Objektreferenz
+	my ($ticket, $content);
+
+	while ( ($ticket, $content) = each (%{$self->{ticket_hash}}) ) {
+		print "$ticket:$content\n";
+	}
+}
+
+
+sub Delete {
+#
+# PARAMETER:	1. Ticket
+#
+# RETURN:	1. Zum Ticket gehoeriger Username = Ticket ist OK
+#		   -1 = Ticket ist unbekannt
+#
+# DESCRIPTION:
+#	Loescht das angegebene Ticket
+#	
+#
+    my $self = shift @_;
+    my ($ticket) = @_;
+
+    my $value = $self->{ticket_hash}->{$ticket};
+    return -1 if ! defined $value;
+    
+    delete $self->{ticket_hash}{$ticket};    
+    
+    return 1;
+
+}
+
+
+1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,472 @@
+#!/usr/local/bin/perl -w
+#
+# KLASSE:	Passwd
+#
+# Basisklasse:  LkTyH
+#
+# METHODEN:
+#	$Passwd = new Passwd ( $filename);
+#		Konstruktor.
+#		Erzeugt Passwd-Object, welches auf die .passwd- Datei
+#		zugreift
+#
+#	$status = $Passwd->Create_User ( $username, $passwd, $flags, $project_list);
+#		Traegt einen neuen Benutzer in die Password-Datei ein, dabei
+#		wird das Password verschluesselt
+#		
+#	$status = $Passwd->Modify_User ( $username, $passwd, $flags, $project_list);
+#		Aendert einen bestehenden Eintrag in der Password-Datei,
+#		wobei jedes Feld ausser $username veraendert werden darf
+#		Ferner wird ueberprueft, ob der Eintrag vorhanden ist
+#
+#	$status = $Passwd->Get_User( $username, \$flags, \$project_list);
+#		Gibt einen bestehenden Eintrag aus der Password-Datei,
+#		wobei jedes Feld ausser $username Rueckgabewerte
+#		enthaelt
+#
+#	$status = $Passwd->Delete_User( $username);
+#		Loescht einen bestehenden Eintrag aus der Password-Datei,
+#               Ueberpruefung auf Vorhandensein des Eintrags
+#
+#	$status = $Passwd->Check_Project_Access( $username, $project);
+#		Ueberpruefung, ob der Benutzer $username das Project $project
+#               bearbeiten darf
+#
+#	$status = $Passwd->Check_Admin_Access( $username, $flag);
+#		Ueberpruefung, ob der Benutzer $username ein bestimmtes Admin-
+#               Recht fuer sich beanspruchen darf
+#
+#	$status = $Passwd->Check_Passwd( $username, $passwd);
+#		Ueberpruefung, ob das uebergebene Password fuer den Benutzer 
+#               mit dem eingetragenen uebereinstimmt
+#
+#       \%userhash = $Passwd->Get_Userlist( $field);
+#               Gibt eine Referenz auf einen Hash zurueck, der die mit $field 
+#               bezeichneten Eintraege eines Benutzers enthaelt.
+#	
+#
+# COPYRIGHT
+#	(c) 1997 dimedis GmbH, All Rights Reserved
+#
+# MODIFICATION HISTORY
+#	30.09.1997 0.1.0 stefan
+#		Erste Version mit folgenden Methoden
+#		- Konstruktor
+#		- Destruktor
+#		- Create_User
+#		- Modify_User
+#		- Delete_User
+#               - Check_Project_Access
+#               - Check_Admin_Access
+#               - Check_Passwd
+#
+#	06.10.1997 0.2.0 stefan
+#               Ergaenzung der Fehler- und Statuscodes
+#               Aenderung der Trennzeichen vom :-Zeichen zum TAB-Zeichen 
+#
+#       16.10.1997 0.3.0 stefan
+#               Verlagerung der tied hash Behandlung in die Basisklasse
+#               LkTyH, die den Konstruktor und Destruktor zur Verfuegung
+#               stellt, d.h. der Destruktor der Passwd-Klasse kann entfernt
+#               werden
+#
+#	19.10.1997 0.4.0 stefan
+#               Hinzufuegen der Methode Get_Userlist
+#
+#   20.10.1997 0.5.0 stefan
+#               Hinzufuegen der Methode Get_User
+#
+#	26.05.1998 0.6.0 joern
+#		+ crypt() wird unter NT nicht verwendet, da crypt()
+#		  dort leider nicht implementiert ist
+#
+#
+package Passwd;
+
+use LkTyH;
+
+@ISA = qw( LkTyH);           # Klasse LkTyH erben
+
+# Error- and Statuscodes 
+#
+$FILE_ERROR = -1;            # Datei konnte nicht geoeffnet werden
+$UNKNOWN_USER = -2;          # Der spezifizierte Benutzer ist nicht eingetragen
+$NOT_INITIALIZED = -3;       # Instanz konnte nicht erzeugt werden
+$USER_ALREADY_CREATED = -4;  # Versuch bestehenden Benutzer noch einmal
+                             # anzugelegen.
+
+$TRUE = 1;
+$FALSE = 0;
+
+# Konstanten
+#
+$POS_PASSWD = 0;             # Position des Password-Strings im Zeileneintrag
+$POS_FLAGS = 1;              # Position des Benutzerrechte-Strings im Zeileneintrag
+$POS_PROJECTS = 2;           # Position des Projektzugehoerigkeits-Strings 
+                             # im Zeileneintrag
+
+# Klassenvariablen
+#
+$version = "0.5.0";          # derzeitige Version der Klasse Passwd
+$init_status = $TRUE;        # Status, ob eine Instanz erzeugt werden konnte
+
+
+sub new {
+#
+# PARAMETER:    1. Dateiname der Password-Datei
+#
+# RETURN:	1. Objektreferenz
+#		2. Objekttyp
+#
+# DESCRIPTION:
+#	Konstruktor der Passwd-Klasse. Bindet die Passwd-Datei an einen
+#	internen Hash.
+#
+    my $type = shift;        # Objekttyp
+    my $filename = shift;    # Dateiname der Password-Datei
+
+    return undef if $init_status == $FALSE;
+
+    my $self = $type->SUPER::new( $filename);
+                             # Instanz-Hash fuer Instanzvariablen
+
+    $self->{passwd_hash} = \%{$self->{LkTyH_hash}};
+
+    if ($LkTyH::init_status == $FALSE) {
+	$init_status = $FALSE;
+    } 
+    
+    return bless $self, $type;
+} 
+
+
+sub Create_User {
+#
+# PARAMETER:	1. Username
+#		2. Password
+#               3. Flags
+#               4. Projekte
+#
+# RETURN:	Fehlercodes
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#               $USER_ALREADY_CREATED = Benutzer existiert bereits
+#
+# DESCRIPTION:
+#	Speichert Username, Password, Flags und die Projektliste in die
+#	Password-Datei ab, wobei vorher noch das Password verschluesselt
+#       wird.
+#
+    
+    my $self = shift;            # Objekttyp
+    my ($username, 
+	$password, 
+	$flags, 
+	$projects) = @_;         # Uebergabeparameter	
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;    
+    return $USER_ALREADY_CREATED if defined $self->{passwd_hash}{$username};
+
+    $self->Store_User( $username, $password, $flags, $projects);
+
+    $TRUE;
+}
+
+sub Modify_User {
+#
+# PARAMETER:	1. Username
+#		2. Password
+#               3. Flags
+#               4. Projekte
+#
+# RETURN:	Fehlercodes
+#               $UNKNOWN_USER = Benutzer existiert nicht
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Aendert die Eintraege in der Password-Datei eines bestehenden Benutzers
+#	
+#
+    my $self = shift;        # Objekttyp
+    my ($username, 
+	$password, 
+	$flags, 
+	$projects) = @_;     # Uebergabeparameter	
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;    
+    return $UNKNOWN_USER unless defined $self->{passwd_hash}{$username};
+
+    $self->Store_User( $username, $password, $flags, $projects);
+
+    1;
+}
+
+
+sub Get_User {
+#
+# PARAMETER:	1. Username
+#               2. Referenz auf Flags
+#               3. Referenz auf Projekte
+#
+# RETURN:	Fehlercodes
+#               $UNKNOWN_USER = Benutzer existiert nicht
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Liefert den kompletten Eintrag eines Benutzers aus der 
+#       Password- Datei
+#	
+#
+    my $self = shift;        # Objekttyp
+    my ($username, 
+	$flags, 
+	$projects) = @_;     # Uebergabeparameter	
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;    
+    return $UNKNOWN_USER unless defined $self->{passwd_hash}{$username};
+
+    my $password;
+
+    ( $password, $$flags, $$projects) = 
+	split( "\t", $self->{passwd_hash}{$username});
+    1;
+}
+
+
+sub Delete_User {
+#
+# PARAMETER:	1. Username
+#
+# RETURN:	Fehlercodes
+#               $UNKNOWN_USER = Benutzer existiert nicht
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Loescht einen bestehenden Benutzer
+#
+    my $self = shift;           # Objekttyp
+    my $username = shift;       # Uebergabeparameter
+
+    return $UNKOWN_USER unless defined $self->{passwd_hash}{$username};
+    return $NOT_INITIALIZED if $init_status == $FALSE;
+
+    delete $self->{passwd_hash}{$username};
+
+    1;
+}
+
+sub Check_Project_Access {
+#
+# PARAMETER:	1. Username
+#		2. Projektname
+#
+# RETURN:      -Status
+#              -Fehlercodes
+#               $UNKNOWN_USER = Benutzer existiert nicht
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Prueft, ob der uebergebene Projektname in der Projekteliste des 
+#       angegebenen Benutzers eingetragen ist
+#	
+    my $self = shift;        # Objekttyp
+    my ($username, 
+	$project) = @_;      # Uebergabeparameter	
+
+    return $UNKOWN_USER unless defined $self->{passwd_hash}{$username};
+    return $NOT_INITIALIZED if $init_status == $FALSE;
+
+    my $projects = (split( "\t",
+			  $self->{passwd_hash}{$username}))[$POS_PROJECTS];
+
+    if ( $projects =~ m/\s*($project)\s*/) {
+	return $TRUE;
+    } else {
+	return $FALSE;
+    }
+
+}
+
+
+sub Check_Admin_Access {
+#
+# PARAMETER:	1. Username
+#		2. Flag
+#
+# RETURN:      -Status oder 
+#              -Fehlercodes
+#               $UNKNOWN_USER = Benutzer existiert nicht
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Prueft, ob das uebergebene Flag in der Flagliste des Benutzers
+#       eingetragen ist
+#	
+    my $self = shift;        # Objekttyp
+    my ($username, 
+	$flag) = @_;         # Uebergabeparameter	
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;
+    return $UNKNOWN_USER unless defined $self->{passwd_hash}{$username};
+
+    my $flags = (split( "\t", $self->{passwd_hash}{$username}))[$POS_FLAGS];
+#    print $flags ," ",$flag;
+    if ( $flags =~ m/\s*($flag)\s*/i) {
+	return $TRUE;
+    } else {
+	return $FALSE;
+    }
+
+}
+
+sub Check_Passwd {
+#
+# PARAMETER:	1. Username
+#		2. Password
+#
+# RETURN:      -Status oder
+#              -Fehlercodes
+#               $UNKNOWN_USER = Benutzer existiert nicht
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Verschlusseln des uebergebenen Passwords und Vergleich mit dem 
+#       eingetragenen Password des Benutzers
+#	
+    my $self = shift;            # Objekttyp
+    my ($username, 
+	$password) = @_;         # Uebergabeparameter	
+    
+    return $UNKNOWN_USER unless defined $self->{passwd_hash}{$username};
+    return $NOT_INITIALIZED if $init_status == $FALSE;
+
+    print STDERR "CRYPT: uncrypted=$password salt=$username ";
+    
+    my $salt = 
+	substr $username, 0, 2;  # Stoerfaktor: zwei Zeichen
+
+	if ( $IDE::OS_has_crypt ) {
+	    $password = crypt $password, $salt;    
+	}
+    print STDERR "crypted=$password\n";
+    
+    $crypted_passwd = (split( "\t", 
+			     $self->{passwd_hash}{$username}))[$POS_PASSWD];
+
+    if ( $password eq $crypted_passwd) {
+	return ( $TRUE);
+    } else {
+	return ( $FALSE);
+    }
+}
+
+# private
+sub Store_User {
+#
+# PARAMETER:	1. Username
+#		2. Password
+#               3. Flags
+#               4. Projekte
+#
+# RETURN:	-
+#               
+#
+# DESCRIPTION:
+#	Speichert Username, Password, Flags und die Projektliste in die
+#	Password-Datei ab.
+#
+    
+    my $self = shift;            # Objekttyp
+    my ($username, 
+	$password, 
+	$flags, 
+	$projects) = @_;         # Uebergabeparameter	
+
+    my $salt = 
+	substr $username, 0, 2;  # Stoerfaktor: zwei Zeichen
+    my @projectlist = 
+	split( "\t", $projects); # Projektliste
+    my @flaglist =
+	split( "\t", $flags);     # Flagliste
+
+    if ( $password eq "") {
+    	$password = (split( "\t", 
+			   $self->{passwd_hash}{$username}))[$POS_PASSWD];
+    }
+    else {
+		$password = crypt $password, $salt if $IDE::OS_has_crypt;
+    }
+    
+    $self->{passwd_hash}{$username} = "$password\t".
+	join( ',', @flaglist)."\t".join( ",", @projectlist);
+    
+    1;
+}
+
+sub Get_Userlist {
+#
+# PARAMETER:	Feld
+#		
+#
+# RETURN:      -Referenz auf einen Hash
+#              -Fehlercodes
+#               $UNKNOWN_USER = Benutzer existiert nicht
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Liefert einen bestimmtes Feld aus dem Eintrag eines Benutzers 
+#       in der Password-Datei als Referenz auf einen Hash zurueck
+#	
+    my $self = shift;        # Objekttyp
+
+    my $field = shift;       # Uebergabeparameter
+
+    my $username;            # Name der Benutzers
+    my %userhash;            # Hash der Benutzernamen
+    my %field_hash = (
+       PASSWORD => $POS_PASSWD,
+       RIGHTS => $POS_FLAGS,
+       PROJECTS => $POS_PROJECTS,
+    );
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;
+    if ( $field eq 'USER') {
+	while ( ($username,$content) = each (%{$self->{passwd_hash}}) ) {
+	    $userhash{$username} = $username;
+	}
+    }
+    else {
+	while ( ($username,$content) = each (%{$self->{passwd_hash}}) ) {
+	    $userhash{$username} = 
+		(split( "\t", $content))[$field_hash{$field}];
+	}
+    }
+    return \%userhash;
+
+}
+
+
+#private
+sub Dump_All {
+#
+# PARAMETER:	-
+#
+# RETURN:	Fehlercodes
+#               $NOT_INITIALIZED = Instanz existiert nicht
+#
+# DESCRIPTION:
+#	Gibt die komplette Passwddatei auf STDOUT aus
+#
+    my $self = shift;		# hole Objektreferenz
+    my ($username, $content);
+
+    return $NOT_INITIALIZED if $init_status == $FALSE;
+    print "Version: $version\n";
+    
+    while ( ($username, $content) = each (%{$self->{passwd_hash}}) ) {
+	print "$username:$content\n";
+    }
+    1;
+}
+
+
+1;

@@ -1,0 +1,507 @@
+newspirit modification history:
+===============================
+
+$Id: HISTORY,v 1.7 1999/08/17 16:50:16 joern Exp $
+
+Version 1.0.12
+==============
++ Bugfix im spirit Installer, CIPP/Runtime.pm wurde nicht
+  in die aktuellen Projekte kopiert
+
+Version 1.0.11
+==============
++ weitergehende CIPP und spirit Bugfixes zur mod_perl Komp.
+  Derzeit ist in newspirit die CIPP Version 2.0.9_05 enthalten,
+  eine spezielle Patch-Release fuer diese newspirit Version
+
+Version 1.0.10
+==============
++ reine CIPP Bugfixes
+  + Scripts sind mod_perl kompatibel
+  + Verschachtelung von SQL SELECT Statements war nicht moeglich
+
+Version 1.0.9
+=============
++ NT Bugfix: Bilder wurden nicht korrekt installiert, beim
+  "Projekt komplett uebersetzen"
+
+Version 1.0.8
+=============
++ die Verzeichnisse mit Versionsinformationen werden nun mit Recht
+  0775 angelegt
+  
++ aufgrund eines Bugs in der Berkley DB wird diese nicht mehr
+  zur Speicherung von Abhaengigkeiten verwendet. Stattdessen
+  wird GDBM verwendet, allerdings NUR unter UNIX.
+  Unter Windows NT wird mangels temporärer Nicht-Verfügbarkeit
+  von GDBM_File und verdientem Urlaub des spirit Entwicklers nach
+  wie vor DB_File verwendet (hier ist der Bug bisher auch noch nicht
+  aufgetreten). Das wird sich u.U. in der Zukunft noch ändern.
+
+  UPDATE-HINWEIS:
+  ===============
+  Nach Einspielen dieser Version müssen die alten Dependency Dateien
+  gelöscht und anschließend das Projekt komplett neu übersetzt
+  werden. Zum Löschen können folgende POSIX Shell Kommandos verwendet
+  werden:
+  
+  	cd $PROJECT/spirit/src
+  	rm $(find . -name '.dep*')
+	
++ in dieser Version ist der CVS Confict/Workaround fest eingeschaltet.
+  Dieser kann abgeschaltet werden, indem die $IDE::cvs Variable in
+  etc/ide.conf auf 0 gesetzt wird.
+  Ist der Workaround eingeschaltet, werden keine Versionsinformationen
+  in den Objektdateien mehr gespeichert, so daß keine Konflikte bei
+  mehreren committenden CVS Working Directories entstehen.
+
+  ACHTUNG: Wenn der Workaround eingeschaltet ist, gibt es keine spirit
+           Versionsverwaltung/History mehr!
+
+Version 1.0.7
+=============
++ NT Netscape Webserver Bugfix: CGI Scripte werden nicht in ihrem
+  eigenen Directory ausgefuehrt sondern haben das Perl bin Directory
+  als Working Directory
++ enthaelt neue CIPP Version 2.0.9, die diesen Bugfux auch fuer die
+  generierten CGI Programme vornimmt
++ die spirit und CIPP PDF Dokumentation ist nun wieder im Paket
+  enthalten, diese fehlte im 1.0.6er Paket
+
+Version 1.0.6
+=============
++ Informix SQL Objekte lassen sich nun auch unter NT ausfuehren
++ NT Bugfixes
+  + Objektsperren werden nun auch zurueckgesetzt
+  + der Perl-Syntaxcheck funktioniert
+  + es wurden keine Dependencies gespeichert
+
+Version 1.0.5
+=============
++ erste unter NT nahezu vollstaendig laufende Version,
+  es gibt noch folgende Einschraenkungen:
+  - Bug beim Objekt Locking, Locks werden nicht zurueckgesetzt
+  - kein Perl Syntaxcheck bei uebersetzten Programmen 
+  - Ausfuehrung von Informix SQL Objekten noch nicht moeglich
+
+Version 1.0.4
+=============
++ enthaelt neue CIPP Version 2.0.7
+
+Version 1.0.3
+=============
++ enthaelt neue CIPP Version 2.0.6 mit generel exception Bugfix
+
+Version 1.0.2
+=============
++ Beim Öffnen und Schließen von Ordnern im Projektbrowser wird der
+  entsprechende Ordner beim Reload direkt angesprungen
++ enthält neue CIPP Version (2.0.5), die beim Einsatz mit newspirit bis
+  zu 50% Performancezuwachs beim Übersetzen von ganzen Projekten und
+  großen Programmen bringt.
+
+Version 1.0.1
+=============
++ Minor Bugfix: der Timeout-Mechanismus zum Löschen von spirit Sessions
+  funktionierte nicht. Sessions wurden nur bei explizitem Logout
+  gelöscht.
++ Bei Updates wurden die Mapping Einstellungen nicht übernommen
++ neue CIPP Version 2.02 (siehe CIPP-HISTORY)
+
+Version 1.00
+============
++ offizielle Release zur CeBIT 1999
++ Ansicht und Anerkennung der Lizenztexte in spirit-install.pl
+  eingebaut
+
+Version 0.79
+============
++ Einstellungen für die Größe des Modification Textfeldes waren
+  bei INCLUDEs wirkungslos
++ spirit-install.pl: Initialisierungsfragen haben nun als
+  Default-Ausgabe "[n]"
++ Es wurden keine Exceptions angezeigt, wenn das CIPP Logfile
+  nicht schreibbar war. Nun erscheint die Exception und ein
+  entsprechender Hinweis, daß die Exception nicht im Logfile
+  vermerkt werden konnte.
+
+Version 0.78
+============
++ Download der spirit Objekt-Dateien ist nun möglich. Im Editor ist
+  der Objektname im Headerbereich clickable. Das File wird mit dem
+  Mime-Type "application/x-spirit-object" gesendet. Wenn beim Browser
+  ein Texteditor als Handler für diesen Mime-Type eingerichtet ist,
+  kann z.B. komfortabel in dem Text Suchen/Ersetzen u.ä. gemacht
+  werden.
+  
+  Einrichten eines Handlers im Netscape:
+  
+  Unix:
+  	Mime-Type:	application/x-spirit-object
+	Suffix:		spirit-obj
+	Application:	nedit %s
+	(bzw. nach Belieben. Das Programm darf aber NICHT forken!!!)
+
+  Win: 
+  	Mime-Type:	application/x-spirit-object
+	Suffix:		spirit-obj
+	Application:	notepad "%1"
+	(bzw. nach Belieben)
+	
+Version 0.77
+============
++ Bugfix: erster Aufruf einer Edit-Seite nach Löschen eines Objektes
+          ergab einen Server-Error
+
+Version 0.7.6.2
+===============
++ Bugfix: spirit-install.pl hat die CIPP Runtime Library nicht
+          korrekt in bestehende Projekte eingebunden
+
+Version 0.7.6.1
+===============
++ Bugfix: im Installationsarchiv fehlten einige Perl Libraries
+
+
+Version 0.7.6.0 (Bugfix Release)
+===============
++ Dokumentation von CIPP und spirit liegt nun in getrennten PDF Files vor.
++ CIPP_Runtime.pm heißt nun CIPP::Runtime.pm
++ Lizenzcode entfernt
+
+Fixed Bugs:
+
++ Bug: wenn keine Default-DB definiert ist, bricht Übersetzungsvorgang
+  mit Server Error ab, wenn auf Default-DB zugegriffen wird
++ Bug: <?SQL DB=Gibts_hier_gar_nicht> führt zu Laufzeitfehler in spirit
+       ==> Es wird versucht den entsprechenden DB-Treiber zu laden,
+           das crasht aber :(
++ Bug: Objektsperren aufheben, wenn man auf einen Ordner geht
++ Bug: <?IMG>: bei Fehlermeldung wird <?FORM> ausgegeben
++ Bug: <?CONFIG NAME=Ein.Include> geht durch, Laufzeitfehler
++ Bug: Objekt locken, wenn es frisch angelegt ist.
++ Bug: Locking bei SQL: "Speichern und Ausführen" Buttons noch da!
++ Bug: Löschen von Objekten: Dependencies in ALLEN Projekten abfragen
++ Bug: spirit: Objektbeschreibung muß html-gequoted werden > => &amp;
++ Bug: Server-Error, wenn aufgrund von Depedencies Objekte nicht gefunden werden,
+  die im Filesystem handish gelöscht wurden. Hier muß eine vernünftige
+  Fehlermeldung im Message-Log des Includes auftreten.
++ Bug: Beim Projekt anlegen: Verzeichnis darf z.Zt. nicht existieren!
++ Bug: <?INCINTERFACE INPUT="$a" NOQUOTE="$a"> wurde zu
+       <?INCINTERFACE OUTPUT="$a"> und der Aufruf via
+       <?INCLUDE NAME="wawa" A=\%bla> klappte immer noch
+  Die Prüfung auf unbekannte Eingabeparameter funktionierte überhaupt nicht!
++ Bug: nicht deklarierte Variable $event in CIPP Programm führt nicht
+       zu einer spirit Fehlermeldung, sondern crash erst beim Aufruf
+       des CGI. => Syntax Check eval {} in SAUEBEREM Kontext ausführen!
++ Bug: bei cipp-html's wird keine <!-- generated with CIPP --> Meldung eingefügt
+
++ Bug: <?VAR MY DEFAULT> gibt "global symbol" Error
+       
+       ACHTUNG! INKOMPATIBLE ÄNDERUNG!
+       
+       Der Default Wert wird nun genommen, wenn die Zuweisung leer ist,
+       nicht wenn die Zielvariable vorher leer war (das war das bisherige
+       Verhalten).
+       
++ Bug: beim Ändern der Default-DB wird nicht neu übersetzt
+
+
+Version 0.7.5.100
+=================
++ Beim 'Alles Übersetzen' werden die Abhängigkeitsinformationen nun
+  korrekt zurückgesetzt. Dies geschah durch die Änderungen bezüglich
+  der verteilten Speicherung der Abhängigkeitsdaten nicht.
+
+Version 0.7.5.99
+================
++ INKOMPATIBLE ÄNDERUNG:
+  ======================
+  <?SQL PARAMS>: werden Parameter ohne voranstehendes $ oder @ angegeben,
+  so wird nun nicht mehr ein $ per Default vorangestellt. So können hier
+  auch Perl-Funktionen wie z.b. time() eingesetzt werden, ohne hierfür
+  vorher eine entsprechende Variable präpariert zu haben. Programme, die
+  das $ Default-Verhalten ausgenutzt haben, müssen entsprechend geändert
+  werden.
++ Bugfix: OUTPUT-Parameter dürfen nun im INCLUDE genauso genannt werden
+  wie Variablen außerhalb es INCLUDES
++ Bugfix: wenn ein HTML-Objekt ein INCLUDE eingebunden hat, welches ein CONFIG
+  benutzte, so würde die Abhängigkeit des HTML-Objekts von diesem CONFIG
+  nicht vermerkt.
++ Beim Speichern von INCLUDEs und CONFIGs besteht nun die Möglichkeit,
+  das Übersetzen der abhängigen Objekte zu verhindern (Checkbox neben dem
+  Speichern-Button)
++ Objekte, die wegen einer Verzeichnis-Sperre nur read only sind, können
+  nun übersetzt (aber nicht geändert) werden.
++ Abhängigkeiten werden nun projektübergreifend in den Objektverzeichnissen
+  selber verwaltet. Hierdurch können Sourcen projektübergreifend verwendet
+  werden, ohne daß Read-Only Sperren auf gemeinsam genutzte Verzeichnisse
+  gesetzt werden müssen.
++ Objektsperren werden nun ebenfalls projektübergreifend in den Objekt-
+  verzeichnissen verwaltet.
++ es gibt einige neue CIPP Befehle, die aber nur im Apache bzw. mod_perl-
+  Kontext Sinn ergeben (mehr dazu zukünftig in der PDF-Dokumentation)
+  <?AUTOPRINT OFF>: CIPP generiert ab hier keine print Statements mehr selber
+                    (analog zu Mime-Type cipp/dynamic in spirit)
+  <?APREDIRECT>: führt einen Apache-internen Redirect aus
+  <?APGETREQUEST>: gibt das interne Apache-Request Object zurück
+  <?CONFIG NOCACHE>: dieses CONFIG wird unter keinen Umständen beim Einlesen
+                     gechached
++ Objektsperren werden aufgehoben, wenn auf einen Ordner geklickt wird.
++ neuer CIPP-Befehl:
+  <?TEXTAREA><?/TEXTAREA> für sauber html-gequotete TEXTAREAs
+
+  
+Version 0.7.5.5
+===============
++ rudimentäre Möglichkeit, Source-Verzeichnisbäume in mehreren Projekten
+  zu nutzen, indem diese über symbolische Links auf andere Verzeichnisse
+  verweisen. Da z.Zt. die Daten aber nur innerhalb eines Projekts verändert
+  werden dürfen, gibt es einen Sperrmechanismus auf Ordnerebene. Existiert
+  eine Datei .locked in einem Ordner, so ist dieser Ordner für die Projekte,
+  die in der Datei aufgelistet sind (ein Projekt pro Zeile) nur zum Lesen
+  freigegeben
++ Um gemeinsam nutzbare Codebasen zu haben, wird der Projekt-
+  anteil in den CIPP Objektnamen von nun an für völlig
+  redundant erklärt. D.h. er wird schlicht ignoriert. Objekte
+  werden immer im aktuellen Projekt aufgelöst (wie bisher
+  auch...). So kann über symbolische Links eingehängter
+  (oder reinkopierter) Code in beliebig benannten Projekten
+  wiederverwendet werden.
+  Der Projektanteil kann auch weggelassen werden. In diesem
+  Fall beginnt ein Objektname mit einem Punkt.
+  Das stellt einen ersten Schritt in Richtung wiederverend-
+  baren Code dar. Es ist geplant für die Synchonisation
+  solcher gemeinsam genutzter Verzeichnisbäume CVS einzusetzen,
+  wenn die Zeit dafür gekommen ist.
++ <?LOG FILENAME>: wenn hier ein relativer Pfadname angegeben wird, so
+  wird die Datei relativ zum prod/logs Verzeichnis gesehen.
++ <?LOG>: Die Remote-IP-Adresse wird mitgeloggt  
+
+Version 0.7.5.4
+===============
++ Bugfix: durch einen Fehler bei der Zusammenstellung des install Archivs
+  wurde die aktualisierte CIPP_Runtime.pm nicht korrekt übernommen, so daß
+  die <?HTMLQUOTE> und <?INPUT> Bugs noch vorhanden waren
++ die Doku ist bezüglich <?SQL PARAMS> immer noch nicht aktualisiert
+
+Version 0.7.5.3
+===============
++ Bugfix: <?HTMLQUOTE HTMLVAR> funktionierte nicht korrekt, sondern nur
+  wenn die mit HTMLVAR angegebene Variable ohne $-Zeichen angegeben wurde
++ Bugfix: <?INPUT> hat den Value in bestimmten Fällen nicht korrekt gequoted
++ Bugfix: <?SQL PARAMS="@liste"> funktionierte nicht. Nun können auch
+  dynamische Parameterlisten realisiert werden (dies ist in der PDF Doku
+  noch nicht dokumentiert, erst in der nächsten Release)
++ es wird in dieser Release ein erweiterter CIPP Preprocessor verwendet, der
+  auch als Apache-Modul fungieren kann. Dies ändert aber am Funktions-
+  umfang beim Einsatz in spirit nichts.
+
+Version 0.7.5.2
+===============
++ Bugfix: spirit-install.pl hat auf einigen Systemen die prod/cgi-bin
+  Verzeichnisse bestehender Projekte mit falschen Rechten versehen
+  (abhängig von der beim Unix Benutzer eingestellten umask)
++ Bugfix: <?GETURL PAR=@liste>, <?HIDDENFIELD PAR=@liste> funktionierten
+  nicht. Wenn Listenvariablen übergeben werden sollten, gab es einen
+  Perl-Syntaxfehler
++ CIPP Kapitel der Dokumentation überarbeitet und aktualisiert
+  (? Platzhalter bei <?SQL>)
+
+Version 0.7.5.1
+===============
++ Bugfix: beim Löschen von HTML's wurden die CONFIG-
+  Abhängigkeiten nicht aktualisiert. Dadurch trat ein Server Error
+  auf, wenn das entsprechende CONFIG neu übersetzt wurde, weil
+  die laut Dependency zu übersetzende HTML Seite gar nicht
+  mehr exisitierte.
+
+Version 0.7.5.0
+===============
++ Bugfix: <?CATCH> kannte die MY Option nicht
++ Feature: <?SQL> kennt nun Platzhalter in SQL Statements, die durch
+  Parameter ersetzt werden. Dies ersetzt die Verwendung von <?DBQUOTE> und
+  ist zudem auch schneller. (Dieses Feature wird zunächst nur von dem
+  DBI Treibern unterstützt, nicht vom Sybase-Treiber)
+  (Achtung: die Dokumentation ist diesbezüglich noch nicht auf dem
+   aktuellen Stand)
+
+Version 0.7.4.3
+===============
++ Bugfix: Bei <?SQL> konnten bei den Optionen WINSTART und WINSIZE nur
+  Konstanten, aber keiner Variablen, übergeben werden.
++ Bugfix: Unter bestimmten Umständen wurden fälschlicherweise Syntaxfehler
+  ausgegeben, wenn aufgrund einer INCLUDE-Abhängigkeit ein CGI-Script neu
+  übersetzt wurde. Wenn das CGI-Script direkt übersetzt wurde, ergaben sich
+  keine Syntaxfehler.
++ Bei der Ausgabe von Perl-Compilerfehlern wird zur besseren Übersicht der
+  Name des ursprünglichen CGI Objekts mit ausgegeben.
+
+Version 0.7.4.2
+===============
++ Bugfix: INCLUDES ohne INCINTERFACE konnten nicht mit Parametern
+  aufgerufen werden: sie wurden als unbekannte Parameter abgewiesen!
++ Bugfix: INCLUDES werden unter spirit keiner Laufzeitfehler-Prüfung
+  mehr unterzogen.
+  Dies kann bei 'use strict' nicht funktionieren, da INCLUDES isoliert
+  ohne Laufzeitumgebung einige Variablendeklarationen fehlen, die zu
+  Fehlermeldungen führen (insbesondere, wenn Datenbankfunktionen
+  verwendet werden).
+
+
+Version 0.7.4.1
+===============
++ Bugfix: 'Projekt komplett übersetzen' funktionierte bei bereits
+  exisitierenden Projekten nicht, wenn die Version 0.7.4.0 als Update
+  eingespielt wurde. Bei einer Erstinstallation oder bei mit der
+  Version 0.7.4.0 angelegten Projekten, trat das Problem nicht auf.
++ INCLUDES werden einer Perl-Laufzeitfehler-Prüfung unterzogen.
+
+
+Version 0.7.4.0
+===============
++ Bei CIPP, Include und HTML Objekten gibt es nun im Eigenschaftenfenster
+  die Checkbox 'Zwang zur Variablendeklaration'. Diese ist per Default
+  aktiviert und ermöglicht die Entscheidung für oder gegen 'use strict' auf
+  Objektebene
++ Abschnitt über 'use strict' in der Dokumentation hinzugefügt
++ Hinweis über Browser-Caching in der Dokumentation hinzugefügt
++ Perl-Laufzeitfehler werden zunächst unformatiert ausgegeben, da die bisherige
+  Formatierungsroutine nicht einwandfrei funktionierte, wenn mehere Fehler
+  in einem Script auftreten.
+
+
+Version 0.7.3.1
+===============
++ Bugfix: Dateiupload beim Anlegen von Bildobjekten funktionierte nicht immer
+  (abhängig vom Dateinamen des Bildes)
+  
+
+Version 0.7.3
+=============
++ Dokumentation: Abschnitt über Kommentare eingefügt
++ <?CONFIG> hat optionale Parameter RUNTIME und THROW. Wenn RUNTIME gesetzt ist,
+  wird der Name des Konfigurationsobjektes zur Laufzeit aufgelöst, so kann
+  auch eine Variable als Name übergeben werden. THROW gibt die Ausnahme an,
+  die generiert werden soll, falls der Name nicht aufgelöst werden kann.
++ <?GETURL> hat optionale Parameter RUNTIME und THROW. Wenn RUNTIME gesetzt ist,
+  wird der Name des Objektes zur Laufzeit aufgelöst, so kann auch eine
+  Variable als Objektname übergeben werden. THROW gibt die Ausnahme an,
+  die generiert werden soll, falls der Name nicht aufgelöst werden kann.
++ Alle generierten CGI-Programme binden das Verzeichnis $project_dir/prod/lib
+  zusätzlich in den Library-Suchpfad ein. Dort können eigene Libraries
+  installiert werden.
++ <?INCLUDE> hat optionalen Parameter MY. Nur wenn dieser gesetzt ist, werden
+  Ausgabeparameter mit my deklariert, sonst nicht.
+
+  ACHTUNG:
+  ========
+  Hierbei handelt es sich um eine inkompatible Änderung! Alle INCLUDE Aufrufe,
+  die bisher davon ausgegangen sind, daß die Ausgabevariablen implizit
+  deklariert werden (und das sind ALLE, denn das war das bisherige Default-
+  Verhalten ;), müssen nun den zusätzlichen Parameter MY erhalten, oder
+  die Ausgabevariablen müssen vorher explizit deklariert werden.
+  
+  GRUND DER ÄNDERUNG:
+  ===================
+  Die Ausgabeparameter eines INCLUDE's, das innerhalb eines Blocks (z.B.
+  <?IF>) aufgerufen wurde, waren außerhalb des Blocks nicht erreichbar, da
+  die Parameter IMMER innerhalb des Blocks deklariert wurden. Nun kann
+  der Scope der Parameter selbst bestimmt werden, indem die entsprechenden
+  Variablen vorher explizit an der gewünschten Stelle deklariert werden.
+
+
+Version 0.7.2.1:
+================
++ Bugfix: <?VAR TYPE=NUM> ersetzte im Value } durch \}
+  Das ist in diesem Falle aber nicht erwünscht und kann zu Perl Syntaxfehlern
+  führen
++ <?VAR>: TYPE=NUM wird umbenannt zu der Option NOQUOTE
+  TYPE=NUM ist obsolet und wird aus Kompatitbilitätsgründen noch erlaubt,
+  kann aber in zukünfigten Versionen entfallen und soll deshalb nicht
+  mehr verwendet werden.
+
+
+Version 0.7.2:
+==============
++ neue Option VAR bei <?MY> hinzugefügt, um case sensitiv Variablen
+  deklarieren zu können (siehe Dokumentation)
++ Bugfix: bei <?INCLUDE> Aufrufen, die unbekannte Eingabeparameter übergaben,
+  wurde die Fehlermeldung 'Unbekannte Ausgabeparameter' generiert. Richtig
+  ist natürlich 'Unbekannte Eingabeparameter'
++ Objekt-Sperren können nun sofort manuell gelöscht werden. Hierzu erscheint
+  bei der Sperr-Meldung ein entsprechender Button.
+  Versucht derjenige, dem die Sperre entzogen wurde, mit seinem aktuellen
+  Editor-Formular zu speichern, so erfolgt die Speicherung NICHT! Die letzten
+  Änderungen an dem Objekt sind verloren. Eine entsprechende Meldung weist
+  auf diesen Umstand hin.
+
+
+Version 0.7.1:
+==============
++ an SQl Execution Programme (SEP) können Parameter übergeben werden,
+  welche dann an den SQL Command Line Monitor durchgegeben werden
++ Bugfix im CIPP Parser bei INCINTERFACE
++ Es wird eine Fehlermeldung ausgegeben, wenn versucht wird einen
+  INCLUDE Output-Parameter mit einer Variablen entgegenzunehmen,
+  die genauso wie der Output-Parameter heißt
++ Bugfix: Dateinamen von upgeloadeten Bildern in spirit durften nicht
+  mit Ziffern beginnen
++ neue Befehle: <?GETPARAM> <?GETPARAMLIST> <?GETDBHANDLE>
++ Dokumentation überarbeitet
+  - einige Fehler entfernt
+  - Beschreibung der Befehle erfolgt in alphabetischer Reihenfolge
+  - Inhaltsverzeichnis und Index hinzugefügt
+  - Abschnitt über das Updaten von spirit hinzugefügt
+
+
+Version 0.7.0
+=============
++ spirit erzeugt 'use strict' festen Code (wenn in der Datei etc/ide.cnf
+  der Parameter $Use_Strict gesetzt ist)
++ spirit erzeugt automatisch Code, der in persistenten Perl Umgebungen
+  (z.B. OAS) auch persistente Datenbankverbindungen verwendet
++ Neue CIPP Befehle zur Deklaration von Schnittstellen:
+  <?INTERFACE>
+  <?INCINTERFACE>
++ volle Unterstuetzung von Oracle Datenbanksystemen
++ Dokumentation auf PDF umgestellt, derzeit wird keine HTML Dokumentation
+  mit ausgeliefert, dies wird in Folgeversionen wieder der Fall sein
+
+
+Version 0.6.0:
+==============
++ Umstellung der Datenbanktreiber Informix und MySQL auf generische
+  DBI Architektur. D.h. DBI konforme Datenbanken werden intern über
+  ein- und denselben Treiber abgehandelt. Es gibt also z.Zt. folgende
+  Datenbanktreiber in spirit: DBI, Sybase.
++ Umstellung bei der Ausführung von SQL-Code innerhalb von spirit.
+  Einbindung externer SQL-Execution-Programs (SPE) ist möglich.
+
+
+Version 0.5.1
+=============
+
++ volle MySQL Unterstuetzung auf spirit Ebene
+
+Bugfixes:
++ Deadlock beim Anlegen eines Projektes unter Linux
++ <?CATCH> wurde nicht ausgefuehrt
+
+
+Version 0.5.0.1
+===============
+
+Bugfixes:
++ spirit-install brach beim chmod auf ./doc ab, weil das Verzeichnis
+  seit Version 0.5.0 nicht mehr in der Distribution ist
++ Die MySQL Unterstuetzung durch CIPP funktioniert auch, wenn der
+  MySQL Benutzer ein Passwort hat
+
+
+
+
+
+  
+  
+  

@@ -1,0 +1,375 @@
+package Depend;
+use File::Find;
+use LKDB;
+use strict;
+
+sub new {
+	my ($type) = shift;
+
+	my ($project, $class, $project_dir) = @_;
+
+	$project_dir =~ s!/$!!;
+
+	my $init_status = 1;
+
+	my $self = {
+			"project"  => $project,
+			"class" => $class,
+			"project_dir" => $project_dir,
+			"init_status" => $init_status
+	};
+
+	return bless $self, $type;
+}
+
+
+sub depends_on_file {
+	my $self = shift;
+	
+	my ($object) = @_;
+	
+	$object =~ s/^[^\.]+//;	# Projektanteil rausschneiden
+	$object =~ s!\.!/!g;	# alle . zu / machen
+	$object =~ s!:!\.!;	# : von Objekttyp-Trennung zu .extension machen
+	
+	$object =~ s!([^/]+)$!\.$1!;	# . vor Objektnamen setzen
+	my $meta_dir = $self->{project_dir}.$object;
+	
+	mkdir $meta_dir, 0755 if not -d $meta_dir;
+
+#	print STDERR "$meta_dir/.depends_on\n";
+
+	return "$meta_dir/.depends_on";
+}
+
+
+sub dependants_file {
+	my $self = shift;
+	
+	my ($object) = @_;
+	
+#	print STDERR "<p><B>$object: \t";
+	
+	$object =~ s/^[^\.]+//;	# Projektanteil rausschneiden
+	$object =~ s!\.!/!g;	# alle . zu / machen
+	$object =~ s!:!\.!;	# : von Objekttyp-Trennung zu .extension machen
+	
+	$object =~ s!([^/]+)$!\.\1!;	# . vor Objektnamen setzen
+	my $meta_dir = $self->{project_dir}.$object;
+	
+	mkdir $meta_dir, 0755 if not -d $meta_dir;
+
+#	print STDERR "$meta_dir/.dependants</b><p>\n";
+
+	return "$meta_dir/.dependants";
+}
+
+
+sub Put_Depends_On {
+	my $self = shift;
+
+	my ($object, $depends_on) = @_;
+
+	my $project = $self->{project};
+	my $class = $self->{class};
+	
+	my $file = $self->depends_on_file ($object);
+	
+	# ‹berall vorne den Projektnamen raushauen. So gibts,
+	# keinen ƒrgner, wenn mit gemeinsam genutzten Source-Trees
+	# gearbeitet wird, da jedes Objekt so immer im Namensraum
+	# des aktuellen Objektes betrachtet wird.
+	#
+	# Der erste . wird noch stehen gelassen. So wird ein __DEFAULT__
+	# Eintrag (f¸r Datenbanken) unangetastet gelassen.
+	# Beim Reinpatchen des Projektnamens beim Lesen wird der erste
+	# . zum Projektnamen expandiert. Da bei __DEFAULT__ kein .
+	# vorne steht, bleibt dieser Eintrag auch beim Lesen unangetastet
+	# und alles wird gut...
+	
+	my @ary = keys %{$depends_on};
+	my $record = join (
+		"\t", 
+		map { my $x = $_; $x =~ s/^[^\.]+//; $_ = $x } @ary
+	);
+
+#	my $record = join ("\t", @ary);
+
+	my $lkdb = new LKDB ($file, "ex");
+	
+#	print STDERR "Put_Depends_On: project=$project record=$record\n";
+	
+	if ( $record ne '' ) {
+		$lkdb->{hash}->{"$project:$class"} = $record;
+	} else {
+		delete $lkdb->{hash}->{"$project:$class"};
+	}
+	
+	$lkdb = undef;
+
+	1;
+}
+
+
+sub Get_Depends_On {
+	my $self = shift;
+
+	my ($object) = @_;
+
+	my $project = $self->{project};
+	my $class = $self->{class};
+
+	my $file = $self->depends_on_file ($object);	
+
+	my $lkdb = new LKDB ($file, "ex");
+	
+	my (%hash, @hash);
+	my @ary = split ("\t", $lkdb->{hash}->{"$project:$class"});
+
+	# ‹berall vorne den Projektnamen reinhauen. So gibts,
+	# keinen ƒrgner, wenn mit gemeinsam genutzten Source-Trees
+	# gearbeitet wird, da jedes Objekt so immer im Namensraum
+	# des aktuellen Objektes betrachtet wird.
+
+	@hash{@ary} = (1) x ( map { my $x = $_; $x =~ s/^\./$project\./; $_ = $x } @ary );
+
+# 	{ $_ = "$project.$_" }
+#	@hash{@ary} = (1) x @ary;
+	
+	$lkdb = undef;
+
+	return \%hash;
+}
+
+
+sub Put_Depending_Objects {
+	my $self = shift;
+
+	my ($object, $dependants) = @_;
+
+	my $project = $self->{project};
+	my $class = $self->{class};
+
+	my $file = $self->dependants_file ($object);	
+
+	# ‹berall vorne den Projektnamen raushauen. So gibts,
+	# keinen ƒrgner, wenn mit gemeinsam genutzten Source-Trees
+	# gearbeitet wird, da jedes Objekt so immer im Namensraum
+	# des aktuellen Objektes betrachtet wird.
+	
+	my @ary = keys %{$dependants};
+
+	my $record = join (
+		"\t", 
+		( map { my $x = $_; $x =~ s/^[^\.]+//; $_ = $x } @ary )
+	);
+
+#	my $record = join ("\t", @ary);
+
+	my $lkdb = new LKDB ($file, "ex");
+	
+	if ( $record ne '' ) {
+		$lkdb->{hash}->{"$project:$class"} = $record;
+	} else {
+		delete $lkdb->{hash}->{"$project:$class"};
+	}
+
+	$lkdb = undef;
+	
+	1;
+}
+
+
+sub Get_Depending_Objects {
+	my $self = shift;
+
+	my ($object, $all_projects) = @_;
+
+	my $project = $self->{project};
+	my $class = $self->{class};
+
+	my $file = $self->dependants_file ($object);	
+
+	my $lkdb = new LKDB ($file, "ex");
+	
+	my (%hash, @hash);
+	
+	my @ary;
+	if ( not $all_projects ) {
+		# Eintrag dieser Klasse nur f¸r aktuelles Projekt holen
+		@ary = map { "$project$_" } split ("\t", $lkdb->{hash}->{"$project:$class"});
+	} else {
+		# Eintr‰ge dieser Klasse f¸r alle Projekte holen
+		my ($k, $v);
+		while ( ($k, $v) = each %{$lkdb->{hash}} ) {
+#			print STDERR "Get_Dep_Obj: k=$k v=$v\n";
+			next if $k !~ /([^:]+):$class/;
+			push @ary, map { "$1$_" } split ("\t", $v);
+		}
+	}
+
+	# ‹berall vorne den Projektnamen reinhauen. So gibts,
+	# keinen ƒrgner, wenn mit gemeinsam genutzten Source-Trees
+	# gearbeitet wird, da jedes Objekt so immer im Namensraum
+	# des aktuellen Objektes betrachtet wird.
+
+#	@hash{@ary} = (1) x ( map{ my $x = $_; $x =~ s/^\./$project\./; $_ = $x } @ary );
+#	@hash{@ary} = (1) x map { $_ = "$project.$_" } @ary;
+	$lkdb = undef;
+
+	# wenn wir Abh‰ngige gefunden haben: nach Hash umwandeln
+	# und als Hash-Ref zur¸ckgeben
+
+	if ( @ary ) {
+		@hash{@ary} = (1) x @ary;
+		return \%hash;
+	}
+
+	# sonst wird undef zur¸ckgegeben
+
+	return;
+}
+
+
+sub Modify_Dependencies {
+	my $self = shift;
+
+	my ($object, $depends_on_orig) = @_;
+
+	if ( ! defined $depends_on_orig ) {
+		$depends_on_orig = {};
+	}
+
+	# Projektanteil aus $objekt durch aktuelles Projekt ersetzen
+	my $project = $self->{project};
+	$object =~ s/^[^\.]+/$project/;
+
+	# Projektanteile aus $depends_on_orig durch aktuelles Projekt ersetzen
+	# und nach %{$depends_on} umkopieren
+	my $depends_on;
+	my ($k);
+	foreach $k ( keys %{$depends_on_orig} ) {
+#		print STDERR "k=$k\n";
+		$k =~ s/^[^\.]+/$project/;
+#		print STDERR "k=$k\n\n";
+		$depends_on->{$k} = 1;
+	}
+
+#	use Data::Dumper; print STDERR "depends_on: ", Dumper ($depends_on);
+
+	# Zunaechst mal muessen aus dem depending Hash alle Eintraege
+	# entfernt werden, von denen das Objekt NUN NICHT MEHR abhaengig ist!
+	# Dazu muessen wir den VORHER und den NACHHER Zustand vergleichen
+	# und alle Eintraege, die in VORHER aber nicht in NACHHER enthalten
+	# sind, aus dem depending Hash entfernen.
+
+	my $old_depends_on = $self->Get_Depends_On ($object);
+	my $o;
+
+	foreach $o ( keys %{$old_depends_on} ) {
+		if ( ! defined $depends_on->{$o} ) {
+			# Aha, von diesem Objekt sind wir mittlerweile gar
+			# nicht mehr abhaengig. Also loeschen wir uns aus
+			# dessen Abhaengigkeitsliste heraus
+			my $do = $self->Get_Depending_Objects ($o);
+			delete $do->{$object};
+			$self->Put_Depending_Objects ($o, $do);
+		}
+	}
+
+	# Nun muessen alle Dependencies eingetragen werden, die bisher
+	# noch nicht bestanden haben. Dafuer gehen wir die Liste der
+	# uebergebenen Dependencies durch und vergleichen diese mit der
+	# bisherigen Abhaengigkeitsliste. Alle neuen Eintrage muessen
+	# nun in dem entsprechendem Eintrag im depending Hash nachvollzogen
+	# werden
+
+
+	foreach $o ( keys %{$depends_on} ) {
+		if ( ! defined $old_depends_on->{$o} ) {
+			# Aha, von diesem Objekt waren wir bisher nicht
+			# abhaengig. JETZT ABER! Deswegen tragen wird es auch
+			# brav in dessen Eintrag im depending Hash ein
+
+			my $do = $self->Get_Depending_Objects ($o);
+			$do->{$object} = 1;
+
+			$self->Put_Depending_Objects ($o, $do);
+		}
+	}
+	
+	# Nun kommt die leichteste Uebung: wir muessen fuer unser Objekt
+	# nun noch eintragen, von welchen Objekten es denn JETZT abhaengt.
+	# Kein Problemt, das ist nur ein simpler Eintrag im depends_on Hash,
+	# und da wir dafuer sogar eine Zugriffsmethode haben, brauchen wir
+	# diese hier nur noch aufzurufen. Cool!
+
+	$self->Put_Depends_On ($object, $depends_on);
+
+	return;
+}
+
+
+sub Delete_Object {
+	my $self = shift;
+
+	my ($object) = @_;
+
+	my $depends_on = $self->Get_Depends_On ($object);
+
+	# Alle Objekte, von denen dieses Objekt abhaengig war, muessen
+	# nun um den entsprechenden Eintrag erleichtert werden.
+
+	my $o;
+	foreach $o (keys %{$depends_on} ) {
+		my $do = $self->Get_Depending_Objects ($o);
+		delete $do->{$object};
+		$self->Put_Depending_Objects ($o, $do);
+	}
+
+	# Nun schreiben wir noch einen leeren Eintrag fuer dieses Objekt
+	# in das depends_on Hash. De Fakto wird dadurch der Eintrag
+	# gaenzlich geloescht!
+
+	$self->Put_Depends_On ($object, {});
+}
+
+
+sub Clear_Dependencies {
+	my $self = shift;
+	
+	my ($class) = @_;
+	$Depend::clear_class = "$self->{project}:$self->{class}";	# f¸r find
+#	%Depend::clear_hash = {};
+	
+	find (\&clear_one_dependency, $self->{project_dir});
+}
+
+
+sub clear_one_dependency {
+#	print "testing: $File::Find::dir/$_\n";
+	return if not /.depends_on$/ and not /.dependants$/;
+	
+#	++$Depend::n; print STDERR "\n\n÷ffne ($Depend::n): $File::Find::dir/$_\n";
+	$Depend::{"$File::Find::dir/$_"} = 1;
+	
+	my $lkdb = new LKDB ($_, "ex") or die "\ncan't open db file $_";
+#	print STDERR "\nlkdb=$lkdb\n";
+	
+#	print STDERR "Suche nach <B>$Depend::clear_class</B><BR>\n";
+	my @del_list;
+	my ($k, $v);
+	while ( ($k, $v) = each ( %{$lkdb->{hash}} ) ) {
+#		print STDERR "Gefunden: k=$k<BR>\n";
+		push @del_list, $k if $k =~ /^$Depend::clear_class/;
+	}
+	
+	my $o;
+	foreach $o ( @del_list ) {
+#		print STDERR "Depend::clear_class: lˆsche $o => $lkdb->{hash}->{$o}<BR>\n";
+		delete $lkdb->{hash}->{$o};
+	}
+}
+
+
+1;

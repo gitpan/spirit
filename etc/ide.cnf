@@ -1,0 +1,112 @@
+package IDE;
+$Package_Version = "1.0.13";
+$devel = 1;
+$cvs = 0;		# faking von Headerinformationen
+$CLIENT_OS = 0;
+$CLIENT_OS = 1 if $ENV{HTTP_USER_AGENT} =~ /win/i;
+require Config;
+$Config_OS = $Config::Config{'osname'};
+$OS = 0;
+$OS = 1 if $Config_OS =~ /win/i;
+push @INC, "/dim/perllib" if $OS == 0;
+push @INC, "/usr/projects/CIPP" if $OS == 1;
+if ( $OS == 1 ) {
+close STDERR;
+open (STDERR, ">> c:/temp/apache.err");
+select STDERR;
+$| = 1;
+print "\n\n", scalar(localtime(time)),"\n";
+select STDOUT;
+}
+if ( $OS ) {
+$OS_has_crypt = 1;
+$OS_has_driveletters = 1;
+$OS_uses_backslash = 1;
+$OS_null_device = "NUL";
+$OS_temp_dir = "C:/TEMP";
+$OS_has_dup_problem = 0;
+} else {
+$OS_has_crypt = 1;
+$OS_has_driveletters = 0;
+$OS_uses_backslash = 0;
+$OS_null_device = "/dev/null";
+$OS_temp_dir = "/tmp";
+$OS_has_dup_problem = 0;
+}
+if ( ! defined $main::IN_SPIRIT_INSTALL ) {
+$Main_Directory = "/usr/local/spirit/";
+} else {
+$Main_Directory = "./";
+}
+$Etc_Dir = $Main_Directory. "etc/";
+$Project_File = "$Etc_Dir/projects";
+$Driver_File = "$Etc_Dir/drivers";
+$Driver_Dir = $Main_Directory . "cgi-bin/Driver";
+$Driver_System_Dir = $Main_Directory . "drivers";
+$Session_Dir = $Main_Directory . "sessions/";
+$Passwd_File = "$Etc_Dir/passwd";
+$Ticket_File = "$Etc_Dir/ticket";
+$Config_Dir = $Main_Directory . "user-config";
+$Config_File = $Config_Dir . "/config";	  
+$Lib = $Main_Directory . "lib";
+$Depend_Dir = "$Etc_Dir/depend";
+$SEP_Command = "$Driver_System_Dir/cipp/sep.pl";
+$Skel =  "$Etc_Dir/skel";
+$Cgi_Url = "/cgi-bin";
+$Htdocs_Url = "/newspirit/";
+$Icon_Url = "$Htdocs_Url"."spirit-icons";
+$Ide_Url = "$Cgi_Url/ide.cgi";
+$Browser_Url = "$Cgi_Url/pbrowser.cgi";
+$Make_All_Url = "$Cgi_Url/nph-make_all.cgi";
+$Logo_Url = "$Icon_Url/spirit-logo.gif";
+$Driver_Url = "$Cgi_Url/Driver";
+$Title = " --- spirit --- Erfolg ist programmierbar";
+$BG_Color = "#ffffff";             # Weiss
+$Text_Color = "#000000";           # Schwarz
+$Link_Color = "#0000ff";
+$Inactive_Color = "#666666";
+$Error_Color = "red";
+$Font = "Helvetica,Geneva,Arial";
+$Font_Size = "2";
+$Menue_BG_Color = "#ddddff";
+$Table_Color = "#dddddd";
+$PB_BG_Color = "#cccccc";
+$PB_Text_Color = "#000000";
+$PB_Link_Color = "#0000ff";
+$Textarea_Cols = 100;
+$Textarea_Rows = 30;
+$Description_Cut = 50;
+$Header_Buttons = 1;
+$Logo_Frame_Size = "40,*";
+$Main_Frame_Size = "20%,80%";
+@Para_Desc = (
+[ undef,            'Farben' ],
+[ 'BG_Color',       'Hintergrundfarbe' ],
+[ 'Menue_BG_Color', 'Hintergrundfarbe der Men&uuml;s' ],
+[ 'Table_Color',    'Hintergrundfarbe der Eingabemasken' ],
+[ undef,            'Schrift' ],
+[ 'Font',           'Schriftart' ],
+[ 'Font_Size',      'Schriftgr&ouml;&szlig;e' ],
+[ 'Text_Color',     'Schriftfarbe f&uuml;r normalen Text' ],
+[ 'Link_Color',     'Schriftfarbe f&uuml;r Verweise' ],
+[ 'Inactive_Color', 'Schriftfarbe f&uuml;r inaktive Buttons' ],
+[ 'Error_Color',    'Schriftfarbe f&uuml;r Fehlermeldungen' ],
+[ undef,            'Editor' ],
+[ 'Textarea_Rows',  'H&ouml;he des Editors' ],
+[ 'Textarea_Cols',  'Breite des Editors' ],
+[ 'Textarea_Wrap',  'Editor mit (1) oder ohne (0) Textumbruch' ],
+[ 'Mod_Size',	    'Breite des Modification Textfeldes' ],
+[ 'Description_Cut','L&auml;nge des Beschreibungstextes im Seitenkopf' ],
+[ 'Header_Buttons', 'Buttons im Header (1) oder Links (0)' ],
+[ undef,            'Projektbrowser' ],
+[ 'PB_BG_Color',    'Hintergrundfarbe des Browser' ],
+[ 'PB_Text_Color',  'Schriftfarbe des Browser' ],
+[ 'PB_Link_Color',  'Schriftfarbe f&uuml;r Verweise' ]
+);
+@Object_Sort = ("cipp", "cipp-html", "cipp-inc", "cipp-img",
+"cipp-config", "cipp-db", "cipp-sql",
+"cipp-driver-config", "log" );
+@Used_Drivers = ("cipp", "log");
+$Use_Strict = 1;
+$Persistent = 0;
+1;
